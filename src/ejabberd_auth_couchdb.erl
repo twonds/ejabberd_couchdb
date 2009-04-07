@@ -64,7 +64,7 @@ start(Host) ->
     application:set_env(ecouch, port, gen_mod:get_opt(port, Opts, "5984")),
     application:set_env(ecouch, user, gen_mod:get_opt(user, Opts, none)),
     application:set_env(ecouch, pass, gen_mod:get_opt(pass, Opts, none)),
-    ok = application:start(ecouch),
+    application:start(ecouch), %% may already be loaded
     sha:start(),
     ok.
 

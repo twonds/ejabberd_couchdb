@@ -34,8 +34,21 @@ http://code.google.com/p/ecouch/
 </li>
 <li>Configure ejabberd
    <ul>
-     <li> 
+     <li>
+     Add couch as the authentication module.
+     <pre>
+{auth_method, couchdb}.
+     </pre> 
      </li>
+<li> Configure couchdb options.
+<pre>
+{couchdb_options, [
+		  {"host","localhost"},
+		  {"port","5489"},
+		  {"user", none},
+		  {"password", none}	
+		  ]}.
+</pre>
    </ul>
 </li>
 
