@@ -22,7 +22,6 @@ stoptest() ->
     
     application:stop(inets),
     application:stop(ecouch),
-    sha:stop(),
     ok.
 
 
@@ -35,11 +34,11 @@ ejabberd_auth_couchdb_register_test() ->
 
 ejabberd_auth_couchdb_set_password_test() ->
     starttest(),
-    true = ejabberd_auth_couchdb:set_password("tofu","localhost","test"),
+    true = ejabberd_auth_couchdb:set_password("tofu","localhost","test123"),
     stoptest().
 
 ejabberd_auth_couchdb_check_password_test() ->
     starttest(),
-    true = ejabberd_auth_couchdb:check_password("tofu","localhost","test"),
+    true = ejabberd_auth_couchdb:check_password("tofu","localhost","test123"),
     stoptest().
     
