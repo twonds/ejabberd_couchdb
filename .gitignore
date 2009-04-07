@@ -8,3 +8,6 @@ autom4te.cache
 configure
 missing
 install-sh
+*.beam
+config.status
+aclocal.m4
