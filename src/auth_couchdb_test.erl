@@ -40,6 +40,7 @@ ejabberd_auth_couchdb_set_password_test() ->
 	    {atomic, ok} = ejabberd_auth_couchdb:try_register("tofu","localhost","test")
     end,
     ok = ejabberd_auth_couchdb:set_password("tofu","localhost","test123"),
+    true = ejabberd_auth_couchdb:check_password("tofu","localhost","test123"),
     stoptest().
 
 ejabberd_auth_couchdb_check_password_test() ->

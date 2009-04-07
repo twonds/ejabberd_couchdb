@@ -76,9 +76,13 @@ check_password(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
     case catch get_user(Jid) of
 	{ok, UserObj} ->
-	    case UserObj of 
-		[{"password",UPassword},_] ->
+	    case get_obj_attr("password",UserObj) of
+		{"password",UPassword} ->
 		    CheckPass = sha:sha(Password),
+		    ?INFO_MSG("Pass ~p DBPass ~p ~p",[CheckPass, 
+						      UPassword,
+						      (CheckPass == UPassword)
+						     ]),
 		    (CheckPass == UPassword);
 		_ ->
 		    false
@@ -101,11 +105,12 @@ set_password(User, Server, Password) ->
     case get_user(Jid) of
 	{ok, UserObj} ->
 	    CheckPass = sha:sha(Password),
-	    NewUser = {obj, [
+	    NewUser = {obj, [{"_id", list_to_binary(Jid)},
+			     get_obj_attr("_rev", UserObj),
 			     get_obj_attr("email", UserObj), 
 			     {"password", CheckPass}
 			    ]},
-	    ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
+	    {ok,{obj,[{"ok",true},_,_]}} = ecouch:doc_update(?COUCHDB_DBNAME, Jid, NewUser),
 	    ok;
 	null ->
 	    {error, invalid_jid};
