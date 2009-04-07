@@ -1,0 +1,10 @@
+*.pyc
+Makefile
+Makefile.in
+aclocal.a4
+autom4te.cache
+*.log*
+*.~*
+configure
+missing
+install-sh
