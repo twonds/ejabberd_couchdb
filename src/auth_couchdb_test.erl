@@ -28,7 +28,7 @@ stoptest() ->
 
 ejabberd_auth_couchdb_register_test() ->
     starttest(),
-    ok = ejabberd_auth_couchdb:remove_user("tofu","localhost","test"),
+    ejabberd_auth_couchdb:remove_user("tofu","localhost"),
     {atomic, ok} = ejabberd_auth_couchdb:try_register("tofu","localhost","test"),
     stoptest().
 

@@ -77,9 +77,8 @@ check_password(User, Server, Password) ->
     case catch ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
 	{ok, {obj, UserObj}} ->
 	    case UserObj of 
-		[{"password",Password},_] ->
-		    ?INFO_MSG("User ~p~n",[UserObj]),
-		    true;
+		[{"password",UPassword},_] ->
+		    (CheckPass == UPassword);
 		_ ->
 		    false
 	    end;
@@ -91,18 +90,16 @@ check_password(User, Server, Password) ->
 
 
 %% @spec (User, Server, Password, StreamID, Digest) -> true | false | {error, Error}
-check_password(User, Server, Password, StreamID, Digest) ->
-    Jid = string:join([User, "@", Server], ""),
-    {ok, {obj, [UserObj]}} = ecouch:doc_get(?COUCHDB_DBNAME, Jid),
-    true.
+check_password(User, Server, Password, _StreamID, _Digest) ->
+    check_password(User, Server, Password).
 
 %% @spec (User::string(), Server::string(), Password::string()) ->
 %%       ok | {error, invalid_jid}
 set_password(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
     case ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
-	{ok, {obj, [UserObj]}} ->
-	    CheckPass = sha:sha(Password),
+	{ok, {obj, [_UserObj]}} ->
+	    _CheckPass = sha:sha(Password),
 	    NewUser = {obj, []},
 	    ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
 	    ok;
@@ -119,7 +116,7 @@ try_register(User, Server, Password) ->
 	    {atomic, exists};
 	_ ->
 	    CheckPass = sha:sha(Password),
-	    NewUser = {obj, [{"_id",Jid}, {"password",Password}, {"email",null}]},
+	    NewUser = {obj, [{"_id",Jid}, {"password",CheckPassword}, {"email",null}]},
 	    ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
 	    {atomic, ok}
     end.
@@ -167,17 +164,17 @@ get_vh_registered_users_number(Server, Opts) ->
 	    0
     end.
 
-get_password(User, Server) ->
+get_password(_User, _Server) ->
     false.
 
-get_password_s(User, Server) ->
+get_password_s(_User, _Server) ->
     "".
 
 %% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     Jid = string:join([User, "@", Server], ""),
     case get_user(Jid) of
-	{ok, UserObj} ->
+	{ok, _} ->
 	    true;
 	_ ->
 	    false
@@ -189,10 +186,12 @@ is_user_exists(User, Server) ->
 remove_user(User, Server) ->
     Jid = string:join([User, "@", Server], ""),
     case get_user(Jid) of
-	{ok, [{"_rev", Rev},_]} ->
-	    case remove_db_user(Jid, Rev) of
-		R ->
-		    ?INFO_MSG("R ~p",[R])
+	{ok, UObj} ->
+	    case  get_obj_attr("_rev", UObj) of
+		{"_rev", Rev} ->
+		    remove_db_user(Jid, Rev);
+		_ ->
+		    error
 	    end;
 	_ ->
 	    error
@@ -200,13 +199,19 @@ remove_user(User, Server) ->
 
 %% @spec (User, Server, Password) -> ok | error | not_exists | not_allowed
 %% @doc Remove user if the provided password is correct.
-remove_user(User, Server, Password) ->
+remove_user(User, Server, _Password) ->
     Jid = string:join([User, "@", Server], ""),
     case get_user(Jid) of
-	{ok, [{"_rev", Rev},_]} ->
-	    %% check password
-	    remove_db_user(Jid, Rev);
-	_ ->
+	{ok, UObj} ->
+	    case  get_obj_attr("_rev", UObj) of
+		{"_rev", Rev} ->
+		    %% check password
+		    remove_db_user(Jid, Rev);
+		_ ->
+		    error
+	    end;
+	_R ->
+	    ?INFO_MSG("R ~p",[_R]),
 	    not_exists
     end.
 
@@ -220,6 +225,16 @@ get_user(Jid) ->
 	    {ok, UserObj};
 	_ ->
 	    none
+    end.
+
+get_obj_attr(_Key, []) ->
+    none;
+get_obj_attr(Key, [H|Obj]) ->
+    {HKey,_} = H,
+    if (HKey == Key) ->
+	    H;
+       true ->
+	    get_obj_attr(Key, Obj)
     end.
 
 remove_db_user(Jid, Rev) ->
