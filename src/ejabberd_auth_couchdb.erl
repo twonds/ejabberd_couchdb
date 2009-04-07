@@ -79,10 +79,6 @@ check_password(User, Server, Password) ->
 	    case get_obj_attr("password",UserObj) of
 		{"password",UPassword} ->
 		    CheckPass = sha:sha(Password),
-		    ?INFO_MSG("Pass ~p DBPass ~p ~p",[CheckPass, 
-						      UPassword,
-						      (CheckPass == UPassword)
-						     ]),
 		    (CheckPass == UPassword);
 		_ ->
 		    false
