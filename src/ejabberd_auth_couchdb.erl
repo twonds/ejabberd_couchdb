@@ -50,6 +50,8 @@
 
 -include("ejabberd.hrl").
 
+-define(COUCHDB_DBNAME, "users").
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -72,7 +74,7 @@ plain_password_required() ->
 check_password(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
     CheckPass = sha:sha(Password),
-    case catch ecouch:doc_get("users", Jid) of
+    case catch ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
 	{ok, {obj, UserObj}} ->
 	    case UserObj of 
 		[{"password",Password},_] ->
@@ -91,23 +93,36 @@ check_password(User, Server, Password) ->
 %% @spec (User, Server, Password, StreamID, Digest) -> true | false | {error, Error}
 check_password(User, Server, Password, StreamID, Digest) ->
     Jid = string:join([User, "@", Server], ""),
-    {ok, {obj, [UserObj]}} = ecouch:doc_get("users", Jid),
+    {ok, {obj, [UserObj]}} = ecouch:doc_get(?COUCHDB_DBNAME, Jid),
     true.
 
 %% @spec (User::string(), Server::string(), Password::string()) ->
 %%       ok | {error, invalid_jid}
 set_password(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
-    {ok, {obj, [UserObj]}} = ecouch:doc_get("users", Jid),
-
-    false.
+    case ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
+	{ok, {obj, [UserObj]}} ->
+	    CheckPass = sha:sha(Password),
+	    NewUser = {obj, []},
+	    ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
+	    ok;
+	_ ->
+	    {error, invalid_jid}
+    end.
 
 
 %% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid}
 try_register(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
-    {ok, {obj, [UserObj]}} = ecouch:doc_get("users", Jid),
-    {atomic, ok}.
+    case get_user(Jid) of
+	{ok, _} ->
+	    {atomic, exists};
+	_ ->
+	    CheckPass = sha:sha(Password),
+	    NewUser = {obj, [{"_id",Jid}, {"password",Password}, {"email",null}]},
+	    ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
+	    {atomic, ok}
+    end.
 
 dirty_get_registered_users() ->
     Servers = ejabberd_config:get_vh_by_auth_method(couchdb),
@@ -160,9 +175,9 @@ get_password_s(User, Server) ->
 
 %% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
-    Jid = string:concat(User, "@", Server),
-    case  ecouch:doc_get("users", Jid) of
-	{ok, {obj, UserObj}} ->
+    Jid = string:join([User, "@", Server], ""),
+    case get_user(Jid) of
+	{ok, UserObj} ->
 	    true;
 	_ ->
 	    false
@@ -172,16 +187,43 @@ is_user_exists(User, Server) ->
 %% @doc Remove user.
 %% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
-    ok.
+    Jid = string:join([User, "@", Server], ""),
+    case get_user(Jid) of
+	{ok, [{"_rev", Rev},_]} ->
+	    case remove_db_user(Jid, Rev) of
+		R ->
+		    ?INFO_MSG("R ~p",[R])
+	    end;
+	_ ->
+	    error
+    end.
 
 %% @spec (User, Server, Password) -> ok | error | not_exists | not_allowed
 %% @doc Remove user if the provided password is correct.
 remove_user(User, Server, Password) ->
-    ok.
+    Jid = string:join([User, "@", Server], ""),
+    case get_user(Jid) of
+	{ok, [{"_rev", Rev},_]} ->
+	    %% check password
+	    remove_db_user(Jid, Rev);
+	_ ->
+	    not_exists
+    end.
 
 %%%
 %% private functions
 %%
+
+get_user(Jid) ->
+    case catch ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
+	{ok, {obj, UserObj}} ->
+	    {ok, UserObj};
+	_ ->
+	    none
+    end.
+
+remove_db_user(Jid, Rev) ->
+    catch ecouch:doc_delete(?COUCHDB_DBNAME, Jid, Rev).
 
 users_number(_Server) ->
     0.

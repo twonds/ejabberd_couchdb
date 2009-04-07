@@ -18,14 +18,25 @@ starttest() ->
     ok.
 
 stoptest() ->
+    %% remove account
+    
     application:stop(inets),
     application:stop(ecouch),
     sha:stop(),
     ok.
 
-ejabberd_auth_couchdb_test() ->
-    ok.
 
+ejabberd_auth_couchdb_register_test() ->
+    starttest(),
+    ok = ejabberd_auth_couchdb:remove_user("tofu","localhost","test"),
+    {atomic, ok} = ejabberd_auth_couchdb:try_register("tofu","localhost","test"),
+    stoptest().
+
+
+ejabberd_auth_couchdb_set_password_test() ->
+    starttest(),
+    true = ejabberd_auth_couchdb:set_password("tofu","localhost","test"),
+    stoptest().
 
 ejabberd_auth_couchdb_check_password_test() ->
     starttest(),
