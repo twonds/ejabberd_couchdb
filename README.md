@@ -1,6 +1,6 @@
 <h1> Ejabberd storage and authentication using couchdb </h1>
 
-This is a collection or erlang modules for providing couchdb support for ejabberd. Similar to the odbc and ldap modules in the ejabberd distribution.
+This is a collection of erlang modules for providing couchdb support for ejabberd. Similar to the odbc and ldap modules in the ejabberd distribution.
 
 <h2>Authentication Schema </h2>
 
@@ -13,22 +13,33 @@ This is a collection or erlang modules for providing couchdb support for ejabber
 
 <h1> INSTALL </h1>
 
-<ul>
+<ol>
 <li>Install ejabberd  
- NOTE: If you do not use source make sure you get developement packages.
+  <ul>
+     <li>NOTE: If you do not use source make sure you get developement packages.
+     </li>
+  </ul>
 </li>
-<li>Install ecouch - located at the following url :
+<li>Install ecouch - 
+   <ul>
+    <li>located at the following url :
 http://code.google.com/p/ecouch/
+    </li>
+   </ul>
 </li>
 <li> Install ejabberd-couchdb 
- <br/>
+ <ul><li><pre>
  ./bootstrap.sh ;./configure;make install
+</pre></li></ul>
 </li>
 <li>Configure ejabberd
-
+   <ul>
+     <li> 
+     </li>
+   </ul>
 </li>
 
-</ul>
+</ol>
 
 
 
