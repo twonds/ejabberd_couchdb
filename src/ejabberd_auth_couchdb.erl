@@ -52,6 +52,7 @@
 
 -define(COUCHDB_DBNAME, "users").
 
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -73,11 +74,11 @@ plain_password_required() ->
 %% @spec (User, Server, Password) -> true | false | {error, Error}
 check_password(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
-    CheckPass = sha:sha(Password),
-    case catch ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
-	{ok, {obj, UserObj}} ->
+    case catch get_user(Jid) of
+	{ok, UserObj} ->
 	    case UserObj of 
 		[{"password",UPassword},_] ->
+		    CheckPass = sha:sha(Password),
 		    (CheckPass == UPassword);
 		_ ->
 		    false
@@ -97,13 +98,19 @@ check_password(User, Server, Password, _StreamID, _Digest) ->
 %%       ok | {error, invalid_jid}
 set_password(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
-    case ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
-	{ok, {obj, [_UserObj]}} ->
-	    _CheckPass = sha:sha(Password),
-	    NewUser = {obj, []},
+    case get_user(Jid) of
+	{ok, UserObj} ->
+	    CheckPass = sha:sha(Password),
+	    NewUser = {obj, [
+			     get_obj_attr("email", UserObj), 
+			     {"password", CheckPass}
+			    ]},
 	    ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
 	    ok;
-	_ ->
+	null ->
+	    {error, invalid_jid};
+	_E ->
+	    ?INFO_MSG("Error ~p", [_E]),
 	    {error, invalid_jid}
     end.
 
@@ -116,8 +123,8 @@ try_register(User, Server, Password) ->
 	    {atomic, exists};
 	_ ->
 	    CheckPass = sha:sha(Password),
-	    NewUser = {obj, [{"_id",Jid}, {"password",CheckPassword}, {"email",null}]},
-	    ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
+	    NewUser = {obj, [{"password", CheckPass}, {"email", null}]},
+	    {ok,{obj, [{"ok",true},_,_]}} = ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
 	    {atomic, ok}
     end.
 
@@ -211,7 +218,6 @@ remove_user(User, Server, _Password) ->
 		    error
 	    end;
 	_R ->
-	    ?INFO_MSG("R ~p",[_R]),
 	    not_exists
     end.
 
@@ -221,14 +227,17 @@ remove_user(User, Server, _Password) ->
 
 get_user(Jid) ->
     case catch ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
+	{ok, {obj, [{"error", _Error},{"reason",_Reason}]}} ->
+	    %% error is usually a not found
+	    null;
 	{ok, {obj, UserObj}} ->
 	    {ok, UserObj};
 	_ ->
-	    none
+	    null
     end.
 
 get_obj_attr(_Key, []) ->
-    none;
+    null;
 get_obj_attr(Key, [H|Obj]) ->
     {HKey,_} = H,
     if (HKey == Key) ->
