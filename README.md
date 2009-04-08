@@ -1,6 +1,6 @@
 <h1> Ejabberd storage and authentication using couchdb </h1>
 
-This is a collection of erlang modules for providing couchdb support for ejabberd. Similar to the odbc and ldap modules in the ejabberd distribution.
+This is a collection of erlang modules for providing couchdb support for ejabberd. Similar to the odbc and ldap modules in the ejabberd distribution. Right now it only supports authentication.
 
 <h2>Authentication Schema </h2>
 
