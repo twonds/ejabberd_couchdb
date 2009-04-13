@@ -137,13 +137,7 @@ dirty_get_registered_users() ->
       end, Servers).
 
 get_vh_registered_users(Server) ->
-    LServer = jlib:nameprep(Server),
-    case catch list_users(LServer) of
-	{selected, ["username"], Res} ->
-	    [{U, LServer} || {U} <- Res];
-	_ ->
-	    []
-    end.
+    get_vh_registered_users(Server, none).
 
 get_vh_registered_users(Server, Opts) ->
     LServer = jlib:nameprep(Server),
@@ -255,9 +249,6 @@ users_number(_Server) ->
 
 users_number(_Server, _Opts) ->
     0.
-
-list_users(_Server) ->
-    [].
 
 
 list_users(_Server, _Opts) ->
