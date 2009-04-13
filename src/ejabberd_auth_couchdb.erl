@@ -119,7 +119,10 @@ set_password(User, Server, Password) ->
 	    {error, invalid_jid}
     end.
 
-
+%% -------------------------------------
+%% try_register
+%% ejabberd api function to attempt a user registration.
+%%
 %% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid}
 try_register(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
@@ -132,7 +135,9 @@ try_register(User, Server, Password) ->
 	    {ok,{obj, [{"ok",true},_,_]}} = ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
 	    {atomic, ok}
     end.
-
+%% -------------------------------------
+%% dirty_get_registered_users
+%% NOTE: not implemented
 dirty_get_registered_users() ->
     Servers = ejabberd_config:get_vh_by_auth_method(couchdb),
     lists:flatmap(
@@ -176,7 +181,10 @@ get_password(_User, _Server) ->
 %% this is required in the auth api
 get_password_s(_User, _Server) ->
     "".
-
+%% -------------------------------
+%% is_user_exists
+%% needed for ejabberd's auth api to check if a user exists.
+%%
 %% @spec (User, Server) -> true | false | {error, Error}
 is_user_exists(User, Server) ->
     Jid = string:join([User, "@", Server], ""),
