@@ -135,7 +135,9 @@ dirty_get_registered_users() ->
       fun(Server) ->
 	      get_vh_registered_users(Server)
       end, Servers).
-
+%% -------------------------------
+%% get_vh_registered_users
+%% NOTE: not implemented
 get_vh_registered_users(Server) ->
     get_vh_registered_users(Server, none).
 
@@ -148,14 +150,11 @@ get_vh_registered_users(Server, Opts) ->
 	    []
     end.
 
+%% -------------------------------
+%% get_vh_registered_users_number
+%% NOTE: not implemented
 get_vh_registered_users_number(Server) ->
-    LServer = jlib:nameprep(Server),
-    case catch users_number(LServer) of
-	{selected, [_], [{Res}]} ->
-	    list_to_integer(Res);
-	_ ->
-	    0
-    end.
+    get_vh_registered_users_number(Server, none).
 
 get_vh_registered_users_number(Server, Opts) ->
     LServer = jlib:nameprep(Server),
@@ -165,10 +164,10 @@ get_vh_registered_users_number(Server, Opts) ->
 	_Other ->
 	    0
     end.
-
+%% get password is not implemented and returns a false
 get_password(_User, _Server) ->
     false.
-
+%% get password_s is not implemented and returns a string(list)
 get_password_s(_User, _Server) ->
     "".
 
