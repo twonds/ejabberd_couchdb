@@ -5,7 +5,7 @@ This is a collection of erlang modules for providing couchdb support for ejabber
 <h2>Authentication Schema </h2>
 
 {
-  _id: "tofu",
+  _id: "tofu@xmppserver.tld",
   _rev: "...",
   email: "tofu@collecta.com",
   password: "SHA1:sha1-hash"
