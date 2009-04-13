@@ -67,10 +67,14 @@ start(Host) ->
     application:start(ecouch), %% may already be loaded
     sha:start(),
     ok.
-
+%% ----------------------------
+%% plain_password_required
+%% 
+%% tells ejabbered if a plain text password is required with this auth module.
 plain_password_required() ->
     false.
-
+%% ----------------------------
+%% check_password
 %% @spec (User, Server, Password) -> true | false | {error, Error}
 check_password(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
@@ -165,9 +169,11 @@ get_vh_registered_users_number(Server, Opts) ->
 	    0
     end.
 %% get password is not implemented and returns a false
+%% this is required in the auth api
 get_password(_User, _Server) ->
     false.
 %% get password_s is not implemented and returns a string(list)
+%% this is required in the auth api
 get_password_s(_User, _Server) ->
     "".
 
@@ -183,7 +189,6 @@ is_user_exists(User, Server) ->
 
 %% @spec (User, Server) -> ok | error
 %% @doc Remove user.
-%% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
     Jid = string:join([User, "@", Server], ""),
     case get_user(Jid) of
@@ -200,14 +205,25 @@ remove_user(User, Server) ->
 
 %% @spec (User, Server, Password) -> ok | error | not_exists | not_allowed
 %% @doc Remove user if the provided password is correct.
-remove_user(User, Server, _Password) ->
+remove_user(User, Server, Password) ->
     Jid = string:join([User, "@", Server], ""),
     case get_user(Jid) of
 	{ok, UObj} ->
 	    case  get_obj_attr("_rev", UObj) of
 		{"_rev", Rev} ->
 		    %% check password
-		    remove_db_user(Jid, Rev);
+		    Remove = case get_obj_attr("password",UObj) of
+				 {"password",UPassword} ->
+				     CheckPass = sha:sha(Password),
+				     (CheckPass == UPassword);
+				 _ ->
+				     false
+			     end,
+		    if (Remove == true) ->
+			    remove_db_user(Jid, Rev);
+		       true ->
+			    not_allowed
+		    end;
 		_ ->
 		    error
 	    end;
@@ -219,6 +235,8 @@ remove_user(User, Server, _Password) ->
 %% private functions
 %%
 
+%% -------------------------
+%% get a user document from couchdb
 get_user(Jid) ->
     case catch ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
 	{ok, {obj, [{"error", _Error},{"reason",_Reason}]}} ->
@@ -229,7 +247,9 @@ get_user(Jid) ->
 	_ ->
 	    null
     end.
-
+%% -------------------------
+%% get a json object value using a key
+%%
 get_obj_attr(_Key, []) ->
     null;
 get_obj_attr(Key, [H|Obj]) ->
@@ -239,10 +259,12 @@ get_obj_attr(Key, [H|Obj]) ->
        true ->
 	    get_obj_attr(Key, Obj)
     end.
-
+%% --------------------------
+%% remove a user from couchdb
 remove_db_user(Jid, Rev) ->
     catch ecouch:doc_delete(?COUCHDB_DBNAME, Jid, Rev).
 
+%% below are stub functions used in unimplemented functions above.
 users_number(_Server) ->
     0.
 
