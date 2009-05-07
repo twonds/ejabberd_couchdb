@@ -43,10 +43,10 @@ http://code.google.com/p/ecouch/
 <li> Configure couchdb options.
 <pre>
 {couchdb_options, [
-		  {"host","localhost"},
-		  {"port","5489"},
-		  {"user", none},
-		  {"password", none}	
+		  {host,"localhost"},
+		  {port,"5489"},
+		  {user, none},
+		  {pass, none}	
 		  ]}.
 </pre>
    </ul>
