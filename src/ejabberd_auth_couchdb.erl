@@ -83,7 +83,13 @@ check_password(User, Server, Password) ->
 	    case get_obj_attr("password",UserObj) of
 		{"password",UPassword} ->
 		    CheckPass = sha:sha(Password),
-		    (CheckPass == UPassword);
+		    if is_list(UPassword) ->
+			    (CheckPass == UPassword);
+		       is_binary(UPassword) ->
+			    (CheckPass == binary_to_list(UPassword));
+		       true ->
+			    false
+		    end;
 		_ ->
 		    false
 	    end;
@@ -223,7 +229,13 @@ remove_user(User, Server, Password) ->
 		    Remove = case get_obj_attr("password",UObj) of
 				 {"password",UPassword} ->
 				     CheckPass = sha:sha(Password),
-				     (CheckPass == UPassword);
+				     if is_list(UPassword) ->
+					     (CheckPass == UPassword);
+					is_binary(UPassword) ->
+					     (CheckPass == binary_to_list(UPassword));
+					true ->
+					     false
+				     end;
 				 _ ->
 				     false
 			     end,
