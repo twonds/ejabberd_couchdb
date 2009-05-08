@@ -72,7 +72,7 @@ start(Host) ->
 %% 
 %% tells ejabbered if a plain text password is required with this auth module.
 plain_password_required() ->
-    false.
+    true.
 %% ----------------------------
 %% check_password
 %% @spec (User, Server, Password) -> true | false | {error, Error}
