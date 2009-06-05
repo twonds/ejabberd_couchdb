@@ -264,7 +264,8 @@ get_user(Jid) ->
 	    null;
 	{ok, {obj, UserObj}} ->
 	    {ok, UserObj};
-	_ ->
+	Error ->
+	    ?INFO_MSG("AUTH: Error in connection to couch ~p",[Error]),
 	    null
     end.
 %% -------------------------
