@@ -2,8 +2,10 @@
 
 -author("tofu@collecta.com").
 
+-include("ejabberd.hrl").
+
 -export([init/1,
-	 doc_delete/3,
+	 doc_delete/2,
 	 doc_update/3,
 	 doc_create/3,
 	 doc_get/2
@@ -19,7 +21,7 @@ init(Opts) ->
     ok.
 
 get_url(Name, Id) ->
-    CouchUrl = "http://"++get_opt(host)++":"++get_opt(port)++"/",
+    CouchUrl = "http://"++get_opt(host, "127.0.0.1")++":"++get_opt(port, "5984")++"/",
     CouchUrl ++ "/" ++ Name ++ "/" ++ Id.
     
 send_request(Url, Type, Doc) ->
@@ -34,12 +36,12 @@ send_request(Url, Type, Doc) ->
                                 [{"Content-Type", "application/json"}],
                                 Type, EncDoc,
 				Options) of
-        {ok, "200", _Headers, Payload} = Res->
+        {ok, "200", _Headers, Payload} ->
 	    rfc4627:decode(Payload);
-        {ok, "201", _Headers, Payload} = Res->
+        {ok, "201", _Headers, Payload} ->
 	    rfc4627:decode(Payload);
         Error ->
-            ?ERROR("~p sending ~p to ~p~n",
+            ?ERROR_MSG("~p sending ~p to ~p~n",
 		   [Error, Doc, Url]),
             throw({error, storage_error, Error})
     end.
@@ -57,7 +59,7 @@ doc_create(Name, Id, Value) ->
     send_request(Url, put, Value).
 
 doc_get(Name, Id) ->
-    Url = CouchUrl ++ "/" ++ Id,
+    Url = get_url(Name, Id),
     send_request(Url, get, []).
 
 
