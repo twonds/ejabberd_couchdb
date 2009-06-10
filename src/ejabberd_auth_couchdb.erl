@@ -58,13 +58,7 @@
 %%%----------------------------------------------------------------------
 start(Host) ->
     Opts = ejabberd_config:get_local_option({couchdb_options, Host}),
-    %% set up and load ecouch
-    application:start(inets), %% may already be loaded
-    application:set_env(ecouch, host, gen_mod:get_opt(host, Opts, "127.0.0.1")),
-    application:set_env(ecouch, port, gen_mod:get_opt(port, Opts, "5984")),
-    application:set_env(ecouch, user, gen_mod:get_opt(user, Opts, none)),
-    application:set_env(ecouch, pass, gen_mod:get_opt(pass, Opts, none)),
-    application:start(ecouch), %% may already be loaded
+    ejabberd_couch:init(Opts),
     sha:start(),
     ok.
 %% ----------------------------
@@ -116,7 +110,7 @@ set_password(User, Server, Password) ->
 			     get_obj_attr("email", UserObj), 
 			     {"password", CheckPass}
 			    ]},
-	    {ok,{obj,[{"ok",true},_,_]}} = ecouch:doc_update(?COUCHDB_DBNAME, Jid, NewUser),
+	    {ok,{obj,[{"ok",true},_,_]}} = ejabberd_couch:doc_update(?COUCHDB_DBNAME, Jid, NewUser),
 	    ok;
 	null ->
 	    {error, invalid_jid};
@@ -138,7 +132,7 @@ try_register(User, Server, Password) ->
 	_ ->
 	    CheckPass = sha:sha(Password),
 	    NewUser = {obj, [{"password", CheckPass}, {"email", null}]},
-	    {ok,{obj, [{"ok",true},_,_]}} = ecouch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
+	    {ok,{obj, [{"ok",true},_,_]}} = ejabberd_couch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
 	    {atomic, ok}
     end.
 %% -------------------------------------
@@ -262,7 +256,7 @@ get_user(Jid) ->
 get_user(Jid, Retry) when Retry > ?MAX_RETRY ->
     null;
 get_user(Jid, Retry) ->
-    case catch ecouch:doc_get(?COUCHDB_DBNAME, Jid) of
+    case catch ejabberd_couch:doc_get(?COUCHDB_DBNAME, Jid) of
 	{ok, {obj, [{"error", Error},{"reason", Reason}]}} ->
 	    %% error is usually a not found
 	    ?INFO_MSG("AUTH: returned error from couch ~p ~p ",[Error, Reason]),
@@ -288,7 +282,7 @@ get_obj_attr(Key, [H|Obj]) ->
 %% --------------------------
 %% remove a user from couchdb
 remove_db_user(Jid, Rev) ->
-    catch ecouch:doc_delete(?COUCHDB_DBNAME, Jid, Rev).
+    catch ejabberd_couch:doc_delete(?COUCHDB_DBNAME, Jid, Rev).
 
 %% below are stub functions used in unimplemented functions above.
 users_number(_Server) ->
@@ -300,4 +294,5 @@ users_number(_Server, _Opts) ->
 
 list_users(_Server, _Opts) ->
     [].
+
 
