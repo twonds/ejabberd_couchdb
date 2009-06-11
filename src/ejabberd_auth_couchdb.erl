@@ -110,7 +110,7 @@ set_password(User, Server, Password) ->
 			     get_obj_attr("email", UserObj), 
 			     {"password", CheckPass}
 			    ]},
-	    {ok,{obj,[{"ok",true},_,_]}} = ejabberd_couch:doc_update(?COUCHDB_DBNAME, Jid, NewUser),
+	    {ok,{obj,[{"ok",true},_,_]}, _} = ejabberd_couch:doc_update(?COUCHDB_DBNAME, Jid, NewUser),
 	    ok;
 	null ->
 	    {error, invalid_jid};
@@ -132,7 +132,7 @@ try_register(User, Server, Password) ->
 	_ ->
 	    CheckPass = sha:sha(Password),
 	    NewUser = {obj, [{"password", CheckPass}, {"email", null}]},
-	    {ok,{obj, [{"ok",true},_,_]}} = ejabberd_couch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
+	    {ok,{obj, [{"ok",true},_,_]},_} = ejabberd_couch:doc_create(?COUCHDB_DBNAME, Jid, NewUser),
 	    {atomic, ok}
     end.
 %% -------------------------------------
@@ -261,7 +261,7 @@ get_user(Jid, Retry) ->
 	    %% error is usually a not found
 	    ?INFO_MSG("AUTH: returned error from couch ~p ~p ",[Error, Reason]),
 	    null;
-	{ok, {obj, UserObj}} ->
+	{ok, {obj, UserObj}, _} ->
 	    {ok, UserObj};
 	Error ->
 	    ?INFO_MSG("AUTH: Error in connection to couch ~p",[Error]),

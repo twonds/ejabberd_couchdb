@@ -14,12 +14,17 @@ starttest() ->
     application:set_env(ecouch, user, none),
     application:set_env(ecouch, pass, none),
     application:start(ecouch),
-    catch sha:start(), %% may already be started
+    application:start(ibrowse),
+    application:start(ejabberd),
+    sha:start(), %% may already be started
+    ejabberd_couch:init([]),
     ok.
 
 stoptest() ->
     application:stop(inets),
     application:stop(ecouch),
+    application:stop(ibrowse),
+    application:stop(ejabberd),
     ok.
 
 

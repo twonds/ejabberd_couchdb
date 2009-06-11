@@ -3,9 +3,10 @@
 -author("tofu@collecta.com").
 
 -include("ejabberd.hrl").
+-include("jlib.hrl").
 
 -export([init/1,
-	 doc_delete/2,
+	 doc_delete/3,
 	 doc_update/3,
 	 doc_create/3,
 	 doc_get/2
@@ -17,15 +18,15 @@ init(Opts) ->
     application:set_env(?MODULE, port, gen_mod:get_opt(port, Opts, "5984")),
     application:set_env(?MODULE, user, gen_mod:get_opt(user, Opts, none)),
     application:set_env(?MODULE, pass, gen_mod:get_opt(pass, Opts, none)),
-    application:start(ibrowse),
+    ibrowse:start(),
     ok.
 
 get_url(Name, Id) ->
     CouchUrl = "http://"++get_opt(host, "127.0.0.1")++":"++get_opt(port, "5984")++"/",
-    CouchUrl ++ "/" ++ Name ++ "/" ++ Id.
+    CouchUrl ++ ibrowse_lib:url_encode(Name) ++ "/" ++ ibrowse_lib:url_encode(Id).
     
 send_request(Url, Type, Doc) ->
-    Options = [], %% add username and password
+    Options = [{content_type, rfc4627:mime_type()}], %% add username and password
     EncDoc = case Doc of 
 		 "" ->
 		     [];
@@ -33,7 +34,7 @@ send_request(Url, Type, Doc) ->
 		     rfc4627:encode(Doc)
 	     end,
     case catch ibrowse:send_req(Url,
-                                [{"Content-Type", "application/json"}],
+				[],
                                 Type, EncDoc,
 				Options) of
         {ok, "200", _Headers, Payload} ->
@@ -41,18 +42,18 @@ send_request(Url, Type, Doc) ->
         {ok, "201", _Headers, Payload} ->
 	    rfc4627:decode(Payload);
         Error ->
-            ?ERROR_MSG("~p sending ~p to ~p~n",
-		   [Error, Doc, Url]),
+            ?WARNING_MSG("~p ~p sending ~p to ~p~n",
+		   [Type, Error, EncDoc, Url]),
             throw({error, storage_error, Error})
     end.
 
-doc_delete(Name, Id) ->
-    Url = get_url(Name, Id),
+doc_delete(Name, Id, Rev) ->
+    Url = get_url(Name, Id) ++ "?rev="++ibrowse_lib:url_encode(binary_to_list(Rev)),
     send_request(Url, delete, []).
 
 doc_update(Name, Id, Value) ->
     Url = get_url(Name, Id),
-    send_request(Url, post, Value).
+    send_request(Url, put, Value).
 
 doc_create(Name, Id, Value) ->
     Url = get_url(Name, Id),
