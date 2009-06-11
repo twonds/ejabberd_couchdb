@@ -26,7 +26,16 @@ get_url(Name, Id) ->
     CouchUrl ++ ibrowse_lib:url_encode(Name) ++ "/" ++ ibrowse_lib:url_encode(Id).
     
 send_request(Url, Type, Doc) ->
-    Options = [{content_type, rfc4627:mime_type()}], %% add username and password
+    User = get_opt(user, none),
+    Pass = get_opt(pass, none),
+    Options = case User of 
+		  none ->
+		      [{content_type, rfc4627:mime_type()}];
+	          _ ->
+		      [{content_type, rfc4627:mime_type()},
+		       {basic_auth, {User, Pass}}
+		      ]
+	      end, %% add mime type, username and password
     EncDoc = case Doc of 
 		 "" ->
 		     [];
