@@ -51,8 +51,6 @@ send_request(Url, Type, Doc) ->
         {ok, "201", _Headers, Payload} ->
 	    rfc4627:decode(Payload);
         Error ->
-            ?WARNING_MSG("~p ~p sending ~p to ~p~n",
-		   [Type, Error, EncDoc, Url]),
             throw({error, storage_error, Error})
     end.
 
